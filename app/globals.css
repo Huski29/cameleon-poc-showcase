@@ -1,0 +1,177 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap');
+
+@layer base {
+  html {
+    font-size: 90%; /* Scale everything down by 10% */
+  }
+  
+  html, body {
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    margin: 0;
+    padding: 0;
+  }
+  
+  body {
+    background: radial-gradient(circle, #fcfbf8, #f3f0e7);
+  }
+  
+  .dark body {
+    background: radial-gradient(circle, #2a261a, #211d11);
+  }
+  
+  /* Prevent any default scrollbars */
+  * {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+  
+  *::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+}
+
+@layer utilities {
+  .glassmorphic {
+    background: rgba(252, 251, 248, 0.75);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(243, 240, 231, 0.5);
+  }
+  
+  .dark .glassmorphic {
+    background: rgba(33, 29, 17, 0.75);
+    border-color: rgba(59, 52, 33, 0.5);
+  }
+
+  .glassmorphic-header {
+    background-color: rgba(252, 251, 248, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(231, 225, 208, 0.5);
+  }
+
+  .dark .glassmorphic-header {
+    background-color: rgba(33, 29, 17, 0.7);
+    border-bottom: 1px solid rgba(56, 51, 37, 0.5);
+  }
+
+  .main-card {
+    background-color: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px 0 rgba(149, 142, 120, 0.15);
+  }
+
+  .dark .main-card {
+    background-color: rgba(42, 38, 26, 0.6);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+  }
+  
+  .soft-gradient {
+    background: linear-gradient(135deg, #F9F5EC, #FDFBF8);
+  }
+  
+  .dark .soft-gradient {
+    background: linear-gradient(135deg, #262216, #211d11);
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .hide-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+  }
+
+  /* Custom range slider styling */
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    background: #e7e1d0;
+    border-radius: 9999px;
+    outline: none;
+  }
+
+  .dark input[type="range"] {
+    background: #383325;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #e8ba30;
+    cursor: pointer;
+    border-radius: 9999px;
+    border: 2px solid #fcfbf8;
+  }
+
+  .dark input[type="range"]::-webkit-slider-thumb {
+    border-color: #211d11;
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #e8ba30;
+    cursor: pointer;
+    border-radius: 9999px;
+    border: 2px solid #fcfbf8;
+  }
+
+  .dark input[type="range"]::-moz-range-thumb {
+    border-color: #211d11;
+  }
+
+      /* Custom scaling utilities for specific pages */
+      .scale-page-90 {
+        transform: scale(0.9);
+        transform-origin: top center;
+      }
+
+      .scale-page-80 {
+        transform: scale(0.9);
+        transform-origin: top center;
+      }
+
+  /* Custom minimal scrollbar for notifications and specific areas */
+  .scrollbar-custom {
+    scrollbar-width: thin;
+    scrollbar-color: #e8ba30 transparent;
+  }
+
+  .scrollbar-custom::-webkit-scrollbar {
+    display: block !important; /* Override the global hide */
+    width: 6px;
+  }
+
+  .scrollbar-custom::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-custom::-webkit-scrollbar-thumb {
+    background-color: #e8ba30;
+    border-radius: 9999px;
+    border: 1px solid transparent;
+  }
+
+  .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+    background-color: #d4a635;
+  }
+
+  .dark .scrollbar-custom {
+    scrollbar-color: #e8ba30 transparent;
+  }
+}
+
