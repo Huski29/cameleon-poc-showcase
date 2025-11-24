@@ -84,7 +84,6 @@ export const mockWardrobeItems: WardrobeItem[] = [
   },
 ];
 
-// Mock wardrobe preview items (for generate page)
 export const mockWardrobePreviewItems = [
   {
     id: 1,

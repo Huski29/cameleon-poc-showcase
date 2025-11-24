@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useOutfitStore } from "../stores/useOutfitStore";
 import { useWardrobeStore } from "../stores/useWardrobeStore";
@@ -12,7 +12,11 @@ export default function GeneratePage() {
   const [inputValue, setInputValue] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const { generateOutfit } = useOutfitStore();
-  const { items } = useWardrobeStore();
+  const { items, fetchItems } = useWardrobeStore();
+
+  useEffect(() => {
+    fetchItems();
+  }, [fetchItems]);
 
   const handleOpenWardrobe = () => {
     router.push("/wardrobe");
@@ -23,7 +27,6 @@ export default function GeneratePage() {
     router.push("/outfit-result");
   };
 
-  // Get first 6 items for preview
   const wardrobePreview = items.slice(0, 6);
 
   return (

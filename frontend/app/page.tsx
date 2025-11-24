@@ -10,14 +10,16 @@ import type { BodyType } from "./types";
 
 export default function HomePage() {
   const router = useRouter();
-  const { profile, updateAvatar } = useUserStore();
+  const { profile, fetchProfile, updateAvatar } = useUserStore();
   
-  // Initialize from store after hydration
   const [heightRange, setHeightRange] = useState(1);
   const [volumeRange, setVolumeRange] = useState(1);
   const [selectedBodyType, setSelectedBodyType] = useState("");
 
-  // Sync with store after hydration
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
   useEffect(() => {
     if (profile?.avatar) {
       const heightIndex = HEIGHT_RANGES.indexOf(profile.avatar.height);
@@ -29,7 +31,6 @@ export default function HomePage() {
   }, [profile]);
 
   const handleGenerateAvatar = () => {
-    // Update store with selected values
     updateAvatar({
       height: HEIGHT_RANGES[heightRange],
       volume: VOLUME_RANGES[volumeRange],

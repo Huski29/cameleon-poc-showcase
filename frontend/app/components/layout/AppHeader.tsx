@@ -14,9 +14,12 @@ export default function AppHeader() {
   const profileRef = useRef<HTMLDivElement>(null);
   
   const { profile } = useUserStore();
-  const { notifications, markAsRead } = useUIStore();
+  const { notifications, fetchNotifications, markAsRead } = useUIStore();
 
-  // Close dropdowns when clicking outside
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
@@ -27,7 +30,6 @@ export default function AppHeader() {
       }
     };
 
-    // Close dropdowns on scroll (mobile optimization)
     const handleScroll = () => {
       setShowNotifications(false);
       setShowProfile(false);

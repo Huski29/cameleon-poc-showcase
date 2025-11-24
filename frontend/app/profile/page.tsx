@@ -37,7 +37,6 @@ export default function ProfilePage() {
   }, [profile]);
 
   const handleSave = () => {
-    // Save to store
     updateUser({
       name: formData.name,
       email: formData.email,
