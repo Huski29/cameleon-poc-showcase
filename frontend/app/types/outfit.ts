@@ -1,5 +1,3 @@
-// Outfit and outfit generation types
-
 export interface OutfitItem {
   id: number;
   type: string;
@@ -14,5 +12,8 @@ export interface Outfit {
   vibe: string;
   items: OutfitItem[];
   generatedAt: Date;
+  reasoning?: string;
+  style_tips?: string[];
+  color_harmony?: string;
 }
 

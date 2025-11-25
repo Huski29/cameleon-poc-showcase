@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.database import get_db
 from app import models, schemas
+from app.services.fashionclip_service import fashionclip_service
+import json
 
 router = APIRouter()
 
@@ -47,12 +49,36 @@ async def add_wardrobe_item(
         image=item.image,
         alt=item.alt,
         title=item.title,
-        description=item.description
+        description=item.description,
+        brand=item.brand,
+        color=item.color,
+        style_tags=item.style_tags,
+        occasions=item.occasions,
+        season=item.season,
+        gender=item.gender
     )
     
     db.add(db_item)
     db.commit()
     db.refresh(db_item)
+    
+    item_data = {
+        "image": item.image,
+        "title": item.title,
+        "description": item.description,
+        "color": item.color,
+        "brand": item.brand,
+        "style_tags": json.loads(item.style_tags) if item.style_tags else []
+    }
+    
+    image_emb, text_emb = fashionclip_service.generate_item_embeddings(item_data)
+    
+    if image_emb and text_emb:
+        db_item.image_embedding = image_emb
+        db_item.text_embedding = text_emb
+        db.commit()
+        db.refresh(db_item)
+    
     return db_item
 
 @router.delete("/{item_id}", status_code=204)

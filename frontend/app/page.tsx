@@ -10,8 +10,9 @@ import type { BodyType } from "./types";
 
 export default function HomePage() {
   const router = useRouter();
-  const { profile, fetchProfile, updateAvatar } = useUserStore();
+  const { profile, fetchProfile, updateAvatar, updateUser } = useUserStore();
   
+  const [gender, setGender] = useState<'male' | 'female'>('female');
   const [heightRange, setHeightRange] = useState(1);
   const [volumeRange, setVolumeRange] = useState(1);
   const [selectedBodyType, setSelectedBodyType] = useState("");
@@ -28,9 +29,15 @@ export default function HomePage() {
       setVolumeRange(volumeIndex !== -1 ? volumeIndex : 1);
       setSelectedBodyType(profile.avatar.bodyType);
     }
+    if (profile?.user?.gender) {
+      setGender(profile.user.gender as 'male' | 'female');
+    }
   }, [profile]);
 
   const handleGenerateAvatar = () => {
+    if (profile?.user && profile.user.gender !== gender) {
+      updateUser({ gender });
+    }
     updateAvatar({
       height: HEIGHT_RANGES[heightRange],
       volume: VOLUME_RANGES[volumeRange],
@@ -54,6 +61,43 @@ export default function HomePage() {
       {/* Main Content */}
       <main className="flex h-full flex-1 items-center justify-center py-5 px-3 sm:px-4 md:px-6 lg:px-8 overflow-x-hidden">
         <div className="main-card flex w-full max-w-4xl flex-col rounded-xl border border-solid border-[#f3f0e7]/50 dark:border-[#383325]/50 p-4 sm:p-6 md:p-8">
+          
+          {/* Gender Selection */}
+          <div className="mb-6">
+            <h2 className="text-[#1b180e] dark:text-[#f8f7f6] text-base sm:text-lg font-bold leading-tight tracking-[-0.015em] text-center mb-4">
+              I&apos;m shopping for
+            </h2>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => setGender('female')}
+                className={`flex flex-col items-center gap-3 px-6 py-5 rounded-xl border-2 transition ${
+                  gender === 'female'
+                    ? 'border-[#c5a572] bg-[#c5a572]/10'
+                    : 'border-[#e7e1d0] dark:border-[#383325] hover:border-[#c5a572]/50'
+                }`}
+              >
+                <div className="text-4xl">👗</div>
+                <div className="font-semibold text-sm sm:text-base text-[#1b180e] dark:text-[#f8f7f6]">
+                  Women&apos;s Fashion
+                </div>
+              </button>
+              
+              <button
+                onClick={() => setGender('male')}
+                className={`flex flex-col items-center gap-3 px-6 py-5 rounded-xl border-2 transition ${
+                  gender === 'male'
+                    ? 'border-[#c5a572] bg-[#c5a572]/10'
+                    : 'border-[#e7e1d0] dark:border-[#383325] hover:border-[#c5a572]/50'
+                }`}
+              >
+                <div className="text-4xl">👔</div>
+                <div className="font-semibold text-sm sm:text-base text-[#1b180e] dark:text-[#f8f7f6]">
+                  Men&apos;s Fashion
+                </div>
+              </button>
+            </div>
+          </div>
+          
           <h1 className="text-[#1b180e] dark:text-[#f8f7f6] tracking-light text-xl sm:text-2xl md:text-3xl font-bold leading-tight text-center pb-4 sm:pb-6">
             Create Your Style Avatar
           </h1>

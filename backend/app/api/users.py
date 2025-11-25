@@ -28,6 +28,8 @@ async def update_user_profile(
         user.email = user_update.email
     if user_update.profile_picture is not None:
         user.profile_picture = user_update.profile_picture
+    if user_update.gender is not None:
+        user.gender = user_update.gender
     
     db.commit()
     db.refresh(user)

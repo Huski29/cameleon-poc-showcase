@@ -15,6 +15,7 @@ interface UserState {
   updateAvatar: (avatar: Partial<StyleAvatar>) => Promise<void>;
   updatePreferences: (prefs: Partial<StylePreferences>) => Promise<void>;
   updateUser: (user: Partial<UserProfile['user']>) => Promise<void>;
+  updateGender: (gender: 'male' | 'female') => Promise<void>;
 }
 
 export const useUserStore = create<UserState>()(
@@ -39,6 +40,7 @@ export const useUserStore = create<UserState>()(
               name: data.name,
               email: data.email,
               profilePicture: data.profile_picture || '',
+              gender: data.gender || 'female',
             },
             avatar: {
               height: data.height,
@@ -136,6 +138,7 @@ export const useUserStore = create<UserState>()(
               name: user.name,
               email: user.email,
               profile_picture: user.profilePicture,
+              gender: user.gender,
             }),
           });
           
@@ -151,6 +154,35 @@ export const useUserStore = create<UserState>()(
                 name: data.name,
                 email: data.email,
                 profilePicture: data.profile_picture || '',
+                gender: data.gender || 'female',
+              },
+            } : null,
+            isLoading: false,
+          }));
+        } catch (error) {
+          set({ error: (error as Error).message, isLoading: false });
+        }
+      },
+      
+      updateGender: async (gender) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await fetch(`${API_URL}/api/v1/users/profile`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ gender }),
+          });
+          
+          if (!response.ok) throw new Error('Failed to update gender');
+          
+          const data = await response.json();
+          
+          set((state) => ({
+            profile: state.profile ? {
+              ...state.profile,
+              user: {
+                ...state.profile.user,
+                gender: data.gender,
               },
             } : null,
             isLoading: false,
@@ -162,7 +194,6 @@ export const useUserStore = create<UserState>()(
     }),
     { 
       name: 'user-store',
-      // Prevent hydration errors in Next.js
       skipHydration: true,
     }
   )

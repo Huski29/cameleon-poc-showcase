@@ -11,12 +11,17 @@ frontend/.env*.local
 
 # Backend
 backend/venv/
+backend/.venv/
 backend/__pycache__/
 backend/**/__pycache__/
 backend/*.pyc
 backend/.pytest_cache/
 backend/cameleon.db
 backend/.env
+
+# Database files
+*.db
+cameleon.db
 
 # Environment
 .env

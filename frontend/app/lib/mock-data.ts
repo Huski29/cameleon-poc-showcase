@@ -1,8 +1,6 @@
-// Centralized mock data for the application
 import type { UserProfile, WardrobeItem, Notification, Outfit } from '../types';
 import { DEFAULT_PROFILE_PICTURE } from '../constants';
 
-// Mock user profile
 export const mockUserProfile: UserProfile = {
   user: {
     id: "user-1",
@@ -22,9 +20,7 @@ export const mockUserProfile: UserProfile = {
   },
 };
 
-// Mock wardrobe items
 export const mockWardrobeItems: WardrobeItem[] = [
-  // Tops
   {
     id: 1,
     category: "tops",
@@ -66,22 +62,6 @@ export const mockWardrobeItems: WardrobeItem[] = [
     title: "Levi's Wedgie Fit",
     description: "Light wash denim, size 27",
   },
-  {
-    id: 6,
-    category: "bottoms",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuB3fMf0d9Fgl7mgKE1ytNfFG6NaoIhHGJOBKhFViV52dDBPW6iK0VAfeMCl37p-kq4oLerQx0oLRBXVDYRYk3295Tgl2wlF_Fadg2xaS9Jj4x99M3nOkMmZcOIAJNmwdxmj9c4Ahb8GJPPxAnGNkgtZSird89dogzXqaryUOsiAgvZ9sZolnSPAwXcm6g2a4YzFDPBYu7axPcrwBu4suSqr70PshaKmYgl9zQXr2GPPpqTIQMJSp76j6lQkpK5rqPec_3Hva78Hlbs",
-    alt: "Black wide-leg trousers",
-    title: "Aritzia Effortless",
-    description: "Black trousers, size 4",
-  },
-  {
-    id: 7,
-    category: "bottoms",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAzT9WI6ttloO2rbFOtb25x2qyYk1KXZv0ZyJsQcuD0nV5GX7DofbE4uvIJVFGi_zVF3Q1z4vRiV9LblXDhaPC_uTAK6SV0Gkp3eLxnWlNVL4i-4hy8J6tBN9IU-jtrGNCm3fgRAro3LNn0pvlNddGOpDctLddafo9Cf6zOx2U_bxJatZrkZ3RX2ajKX5NseC17Chkwutav_43eLPIzp1DDMGDq3v1xmrFh01JSigbs2lplBMWKNcAERgfCKjYC3uRALlfItTz5nQI",
-    alt: "A-line midi skirt in a floral pattern",
-    title: "Réalisation Par Skirt",
-    description: "Floral midi skirt, size S",
-  },
 ];
 
 export const mockWardrobePreviewItems = [
@@ -117,7 +97,6 @@ export const mockWardrobePreviewItems = [
   },
 ];
 
-// Mock notifications
 export const mockNotifications: Notification[] = [
   { id: 1, text: "New outfit suggestion available", time: "5m ago", unread: true },
   { id: 2, text: "Your wardrobe has been updated", time: "1h ago", unread: true },
@@ -129,7 +108,6 @@ export const mockNotifications: Notification[] = [
   { id: 8, text: "New wardrobe items suggested", time: "4d ago", unread: false },
 ];
 
-// Mock outfits
 export const mockOutfits: Outfit[] = [
   {
     id: "outfit-1",

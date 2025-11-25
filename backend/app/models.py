@@ -3,6 +3,13 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.database import Base
 
+try:
+    from pgvector.sqlalchemy import Vector
+    HAS_PGVECTOR = True
+except ImportError:
+    HAS_PGVECTOR = False
+    Vector = None
+
 class User(Base):
     __tablename__ = "users"
     
@@ -10,13 +17,12 @@ class User(Base):
     name = Column(String, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
     profile_picture = Column(String, nullable=True)
+    gender = Column(String, nullable=False, default="female")
     
-    # Style Avatar
-    height = Column(String, nullable=False)  # Petite, Regular, Tall
-    volume = Column(String, nullable=False)  # Lean, Mid, Plus
-    body_type = Column(String, nullable=False)  # Triangle, Rectangle, etc.
+    height = Column(String, nullable=False)
+    volume = Column(String, nullable=False)
+    body_type = Column(String, nullable=False)
     
-    # Style Preferences
     style_preference = Column(String, nullable=False)
     color_palette = Column(String, nullable=False)
     budget = Column(String, nullable=False)
@@ -24,7 +30,6 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationships
     wardrobe_items = relationship("WardrobeItem", back_populates="user", cascade="all, delete-orphan")
     outfits = relationship("Outfit", back_populates="user", cascade="all, delete-orphan")
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
@@ -35,14 +40,29 @@ class WardrobeItem(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String, ForeignKey("users.id"), nullable=False)
-    category = Column(String, nullable=False)  # tops, bottoms, shoes, accessories
+    category = Column(String, nullable=False)
     image = Column(String, nullable=False)
     alt = Column(String, nullable=False)
     title = Column(String, nullable=False)
     description = Column(String, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
     
-    # Relationships
+    brand = Column(String, nullable=True)
+    color = Column(String, nullable=True)
+    style_tags = Column(Text, nullable=True)
+    occasions = Column(Text, nullable=True)
+    season = Column(String, nullable=True)
+    gender = Column(String, nullable=False, default="unisex")
+    
+    if HAS_PGVECTOR:
+        image_embedding = Column(Vector(512), nullable=True)
+        text_embedding = Column(Vector(512), nullable=True)
+    else:
+        image_embedding = Column(Text, nullable=True)
+        text_embedding = Column(Text, nullable=True)
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
     user = relationship("User", back_populates="wardrobe_items")
 
 
