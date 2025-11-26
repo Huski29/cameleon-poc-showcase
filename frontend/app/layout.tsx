@@ -13,11 +13,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="overflow-hidden h-screen">
+    <html lang="en" className="overflow-hidden h-screen" suppressHydrationWarning>
       <head>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
       </head>
-      <body className="font-display soft-gradient text-text-light dark:text-text-dark overflow-hidden h-screen">
+      <body className="font-display soft-gradient text-text-light dark:text-text-dark overflow-hidden h-screen" suppressHydrationWarning>
         <ErrorBoundary>
           {children}
         </ErrorBoundary>

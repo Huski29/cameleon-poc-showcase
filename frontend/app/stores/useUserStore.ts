@@ -1,7 +1,6 @@
 'use client';
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import type { UserProfile, StyleAvatar, StylePreferences} from '../types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -18,47 +17,45 @@ interface UserState {
   updateGender: (gender: 'male' | 'female') => Promise<void>;
 }
 
-export const useUserStore = create<UserState>()(
-  persist(
-    (set) => ({
-      profile: null,
-      isLoading: false,
-      error: null,
+export const useUserStore = create<UserState>()((set) => ({
+  profile: null,
+  isLoading: false,
+  error: null,
+  
+  fetchProfile: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await fetch(`${API_URL}/api/v1/users/profile`);
+      if (!response.ok) throw new Error('Failed to fetch profile');
       
-      fetchProfile: async () => {
-        set({ isLoading: true, error: null });
-        try {
-          const response = await fetch(`${API_URL}/api/v1/users/profile`);
-          if (!response.ok) throw new Error('Failed to fetch profile');
-          
-          const data = await response.json();
-          
-          // Transform backend format to frontend format
-          const profile: UserProfile = {
-            user: {
-              id: data.id,
-              name: data.name,
-              email: data.email,
-              profilePicture: data.profile_picture || '',
-              gender: data.gender || 'female',
-            },
-            avatar: {
-              height: data.height,
-              volume: data.volume,
-              bodyType: data.body_type,
-            },
-            preferences: {
-              stylePreference: data.style_preference,
-              colorPalette: data.color_palette,
-              budget: data.budget,
-            },
-          };
-          
-          set({ profile, isLoading: false });
-        } catch (error) {
-          set({ error: (error as Error).message, isLoading: false });
-        }
-      },
+      const data = await response.json();
+      
+      // Transform backend format to frontend format
+      const profile: UserProfile = {
+        user: {
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          profilePicture: data.profile_picture || '',
+          gender: data.gender || 'female',
+        },
+        avatar: {
+          height: data.height,
+          volume: data.volume,
+          bodyType: data.body_type,
+        },
+        preferences: {
+          stylePreference: data.style_preference,
+          colorPalette: data.color_palette,
+          budget: data.budget,
+        },
+      };
+      
+      set({ profile, isLoading: false });
+    } catch (error) {
+      set({ error: (error as Error).message, isLoading: false });
+    }
+  },
       
       setProfile: (profile) => set({ profile }),
       
@@ -188,14 +185,8 @@ export const useUserStore = create<UserState>()(
             isLoading: false,
           }));
         } catch (error) {
-          set({ error: (error as Error).message, isLoading: false });
-        }
-      },
-    }),
-    { 
-      name: 'user-store',
-      skipHydration: true,
+      set({ error: (error as Error).message, isLoading: false });
     }
-  )
-);
+  },
+}));
 

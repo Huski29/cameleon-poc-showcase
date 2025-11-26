@@ -1,29 +1,51 @@
 # Cameleon - AI Fashion Stylist
 
-An AI-powered outfit generator and wardrobe manager built with Next.js and FastAPI.
+AI-powered outfit generator that helps you create stylish looks from your wardrobe using natural language.
 
-## Stack
+## What It Does
 
-**Frontend:** Next.js 15, TypeScript, Tailwind CSS, Zustand  
-**Backend:** FastAPI, SQLAlchemy, SQLite
+- Chat with AI stylists to generate outfit combinations
+- Manage your virtual wardrobe with real fashion items
+- Get personalized recommendations based on your style preferences
+- Choose from 6 different stylist personalities (from Minimalist to Streetwear)
 
-## Getting Started
+## Tech Stack
 
-### Backend
+**Frontend:** Next.js 15, TypeScript, Tailwind CSS  
+**Backend:** FastAPI, PostgreSQL + pgvector, FashionCLIP  
+**AI:** GPT-4 for outfit generation, FashionCLIP for visual similarity
+
+## Quick Start
+
+### 1. Setup PostgreSQL
+
+```bash
+cd backend
+./setup_postgres.sh
+```
+
+### 2. Backend
 
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+source venv/bin/activate
 pip install -r requirements.txt
+
+# Create .env file
+cp .env.example .env
+# Add your OPENAI_API_KEY
+
+# Seed initial data
 python seed.py
-uvicorn app.main:app --reload --port 8000
+
+# Start server
+uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-API: http://localhost:8000  
-Docs: http://localhost:8000/api/docs
+Backend runs at http://localhost:8000
 
-### Frontend
+### 3. Frontend
 
 ```bash
 cd frontend
@@ -31,47 +53,67 @@ npm install
 npm run dev
 ```
 
-App: http://localhost:3000
+Frontend runs at http://localhost:3000
 
-## Features
+## Adding Fashion Items
 
-- Create personalized style avatars
-- Generate outfits with natural language
-- Manage virtual wardrobe
-- Save favorite outfit combinations
-- Customize style preferences
+You can load a real fashion dataset from Kaggle:
 
-## API Endpoints
+1. Download [Fashion Product Images Dataset](https://www.kaggle.com/datasets/paramaggarwal/fashion-product-images-dataset)
+2. Extract to `backend/` folder
+3. Run `python load_kaggle_fashion_data.py`
 
-### Users
-- `GET /api/v1/users/profile`
-- `PUT /api/v1/users/profile`
-- `PUT /api/v1/users/avatar`
-- `PUT /api/v1/users/preferences`
+This loads 400 items (100 per category) with AI-generated embeddings.
 
-### Wardrobe
-- `GET /api/v1/wardrobe`
-- `POST /api/v1/wardrobe`
-- `DELETE /api/v1/wardrobe/{id}`
+## How It Works
 
-### Outfits
-- `POST /api/v1/outfits/generate`
-- `GET /api/v1/outfits`
-- `GET /api/v1/outfits/history`
-- `POST /api/v1/outfits/{id}/save`
+1. You describe what you want: "casual outfit for a coffee date"
+2. GPT-4 parses your intent and style preferences
+3. FashionCLIP finds similar items from your wardrobe using vector search
+4. AI stylist combines them based on fashion rules and color theory
+5. You get a complete outfit with styling tips
 
-### Notifications
-- `GET /api/v1/notifications`
-- `PUT /api/v1/notifications/{id}/read`
+## AI Stylists
 
-## Development
+Each stylist has a unique approach:
 
-This is a POC with mock AI responses. Currently single-user (no auth).
+- **Alex Rivera** - Smart Casual (sophisticated comfort)
+- **Victoria Sterling** - Formal (timeless elegance)
+- **Jordan Kim** - Streetwear (bold & expressive)
+- **Luna Flores** - Bohemian (free-spirited)
+- **Emma Chen** - Minimalist (less is more)
+- **Richard Hartford** - Classic (traditional refinement)
 
-Reset database:
-```bash
-rm backend/cameleon.db && python backend/seed.py
+## Environment Setup
+
+Create `backend/.env`:
+```env
+DATABASE_URL=postgresql://cameleon_user:cameleon_password_2024@localhost:5432/cameleon_db
+OPENAI_API_KEY=your_key_here
 ```
+
+## Project Structure
+
+```
+cameleon-poc-showcase/
+├── frontend/          # Next.js app
+│   └── app/
+│       ├── generate/  # Outfit generation
+│       ├── wardrobe/  # Wardrobe manager
+│       └── profile/   # User settings
+└── backend/           # FastAPI server
+    ├── app/
+    │   ├── api/       # REST endpoints
+    │   └── services/  # AI & business logic
+    └── load_kaggle_fashion_data.py
+```
+
+## Notes
+
+- Currently single-user (no auth system)
+- Images stored as base64 in database
+- Vector embeddings enable smart fashion search
+- Requires PostgreSQL 14+ with pgvector extension
 
 ## License
 

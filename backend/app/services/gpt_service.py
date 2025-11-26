@@ -3,6 +3,7 @@ from openai import OpenAI
 from typing import Dict, List, Optional
 import json
 from dotenv import load_dotenv
+from app.services.stylist_profiles import get_stylist_profile
 
 load_dotenv()
 
@@ -15,7 +16,7 @@ class GPTService:
         else:
             self.client = OpenAI(api_key=api_key)
     
-    def parse_intent(self, user_prompt: str) -> Dict:
+    def parse_intent(self, user_prompt: str, style_preference: str = "Smart Casual") -> Dict:
         if not self.client:
             return {
                 "occasion": "casual",
@@ -26,15 +27,17 @@ class GPTService:
             }
         
         try:
+            stylist_profile = get_stylist_profile(style_preference)
+            
             response = self.client.chat.completions.create(
                 model="gpt-4",
                 messages=[
-                    {"role": "system", "content": "You are a fashion stylist assistant. Parse the user's outfit request and extract key styling information. Respond ONLY with valid JSON."},
+                    {"role": "system", "content": f"You are {stylist_profile['name']}, a {stylist_profile['title']}. Parse outfit requests through the lens of your styling philosophy: {stylist_profile['philosophy']}"},
                     {"role": "user", "content": f"""Parse this outfit request and extract:
 - occasion (e.g., work, casual, date, party, formal)
 - style (e.g., minimalist, trendy, classic, bohemian, edgy)
 - formality (formal, smart casual, casual, loungewear)
-- vibe (a short descriptive phrase)
+- vibe (a short descriptive phrase that captures the request)
 - keywords (list of relevant fashion terms)
 
 Request: "{user_prompt}"
@@ -74,40 +77,58 @@ Respond with JSON only."""}
             return self._generate_mock_outfit(grouped_items, context)
         
         try:
+            # Get stylist profile based on user's style preference
+            style_preference = user_prefs.get('style_preference', 'Smart Casual')
+            stylist_profile = get_stylist_profile(style_preference)
+            
+            # Prepare item lists for GPT
             tops = [{"title": i.title, "color": i.color, "brand": i.brand} for i in grouped_items.get("tops", [])[:10]]
             bottoms = [{"title": i.title, "color": i.color, "brand": i.brand} for i in grouped_items.get("bottoms", [])[:10]]
             shoes = [{"title": i.title, "color": i.color, "brand": i.brand} for i in grouped_items.get("shoes", [])[:10]]
             accessories = [{"title": i.title, "color": i.color, "brand": i.brand} for i in grouped_items.get("accessories", [])[:5]]
             
-            prompt = f"""You are an expert fashion stylist. Create a complete outfit from the available items.
-
-User Request: {context.get('prompt', 'Create an outfit')}
+            # Build the prompt with stylist personality
+            user_prompt = f"""
+STYLING REQUEST:
+User Request: "{context.get('prompt', 'Create an outfit')}"
 Weather: {context.get('weather_condition', 'N/A')}, {context.get('temperature', 'N/A')}°C
-User Style: {user_prefs.get('style_preference', 'versatile')}
-Color Palette: {user_prefs.get('color_palette', 'neutral')}
+User's Color Palette Preference: {user_prefs.get('color_palette', 'neutral')}
+User's Budget: {user_prefs.get('budget', 'Mid-Range')}
 
-Available Items:
-Tops: {json.dumps(tops)}
-Bottoms: {json.dumps(bottoms)}
-Shoes: {json.dumps(shoes)}
-Accessories: {json.dumps(accessories)}
+AVAILABLE ITEMS TO CHOOSE FROM:
+Tops: {json.dumps(tops, indent=2)}
+Bottoms: {json.dumps(bottoms, indent=2)}
+Shoes: {json.dumps(shoes, indent=2)}
+Accessories: {json.dumps(accessories, indent=2)}
 
-Select ONE item from each category to create a cohesive outfit. Return JSON with:
+YOUR TASK:
+Select ONE item from each category (top, bottom, shoes, and optionally accessory) to create a cohesive outfit that:
+1. Aligns with YOUR styling philosophy
+2. Addresses the user's request
+3. Considers the weather and context
+4. Respects the user's color palette preference
+
+Return your response in this EXACT JSON format:
 {{
   "selected": {{
-    "top": "title of selected top",
-    "bottom": "title of selected bottom",
-    "shoes": "title of selected shoes",
-    "accessory": "title of selected accessory or null"
+    "top": "exact title of selected top from the list",
+    "bottom": "exact title of selected bottom from the list",
+    "shoes": "exact title of selected shoes from the list",
+    "accessory": "exact title of selected accessory or null if not needed"
   }},
-  "reasoning": "Brief explanation of outfit choice (2-3 sentences)",
-  "style_tips": ["tip 1", "tip 2", "tip 3"],
-  "color_harmony": "Description of how colors work together"
-}}"""
+  "reasoning": "2-3 sentences explaining why you chose these items together, reflecting YOUR styling philosophy",
+  "style_tips": ["tip 1 specific to this outfit", "tip 2 about styling", "tip 3 about wearing this look"],
+  "color_harmony": "Brief description of how the colors work together in this outfit"
+}}
+
+Remember: Style this outfit as {stylist_profile['name']} would - staying true to the philosophy of {stylist_profile['philosophy']}"""
 
             response = self.client.chat.completions.create(
                 model="gpt-4",
-                messages=[{"role": "user", "content": prompt}],
+                messages=[
+                    {"role": "system", "content": stylist_profile['system_prompt']},
+                    {"role": "user", "content": user_prompt}
+                ],
                 temperature=0.8,
                 max_tokens=600
             )

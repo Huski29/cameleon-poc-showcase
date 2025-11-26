@@ -1,21 +1,44 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useUserStore } from "../stores/useUserStore";
 
 export default function AvatarConfirmationPage() {
   const router = useRouter();
+  const { profile, updateUser } = useUserStore();
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Get the pending profile picture from localStorage
+    const pendingImage = localStorage.getItem('pendingProfilePicture');
+    if (pendingImage) {
+      setUploadedImage(pendingImage);
+    }
+  }, []);
 
   const handleClose = () => {
+    // Clear pending image
+    localStorage.removeItem('pendingProfilePicture');
     router.back();
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    // Save the uploaded image to the database
+    if (uploadedImage) {
+      await updateUser({ profilePicture: uploadedImage });
+      localStorage.removeItem('pendingProfilePicture');
+    }
     router.push("/generate");
   };
 
   const handleRegenerate = () => {
+    localStorage.removeItem('pendingProfilePicture');
     router.push("/");
   };
+
+  // Determine which image to display
+  const displayImage = uploadedImage || profile?.user?.profilePicture || "https://lh3.googleusercontent.com/aida-public/AB6AXuCFgDwjyKw1e07dYoAojo5sNtYx83L-mRY3sICsQUDEnQ5F9FNN1MWxsoVRhCuifaiJAFuzkSTbLzWIhK_anA7SrFic1qpj_ToWDgJzGPYyTcsF6r6f-xOX6s1NTo3eUggFototNJPiiJbtUuXXzl5bYIA4UUtmqf2u8VaQv1NjSpPPo9YFRM4oqucfPzrYEj5jCAzNwEuKX6OO6rS8M17KRbbbOF2HvcNmBJcMQDIiGBlQwgZ6ukrs0JzUWxK580ke2a2ZUpZnrxQ";
 
   return (
     <div className="relative flex min-h-screen w-full flex-col bg-gradient-to-b from-[#F5F1EA] to-[#FFFBF5] text-[#4A4A4A] dark:from-[#3a3529] dark:to-[#211d11] dark:text-gray-300">
@@ -69,7 +92,7 @@ export default function AvatarConfirmationPage() {
                 <img
                   alt="AI-generated full-body avatar of a person with stylish clothing in a soft, elegant setting."
                   className="w-full h-auto object-cover"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFgDwjyKw1e07dYoAojo5sNtYx83L-mRY3sICsQUDEnQ5F9FNN1MWxsoVRhCuifaiJAFuzkSTbLzWIhK_anA7SrFic1qpj_ToWDgJzGPYyTcsF6r6f-xOX6s1NTo3eUggFototNJPiiJbtUuXXzl5bYIA4UUtmqf2u8VaQv1NjSpPPo9YFRM4oqucfPzrYEj5jCAzNwEuKX6OO6rS8M17KRbbbOF2HvcNmBJcMQDIiGBlQwgZ6ukrs0JzUWxK580ke2a2ZUpZnrxQ"
+                  src={displayImage}
                 />
               </div>
 

@@ -15,6 +15,8 @@ export default function WardrobePage() {
 
   const topsItems = getItemsByCategory('tops');
   const bottomsItems = getItemsByCategory('bottoms');
+  const shoesItems = getItemsByCategory('shoes');
+  const accessoriesItems = getItemsByCategory('accessories');
 
   return (
     <div className="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#F5F5DC] to-[#FFFDD0] p-4">
@@ -62,6 +64,8 @@ export default function WardrobePage() {
           <div className="layout-content-container flex flex-1 flex-col">
             <WardrobeCategory title="Tops" items={topsItems} />
             <WardrobeCategory title="Bottoms" items={bottomsItems} />
+            <WardrobeCategory title="Shoes" items={shoesItems} />
+            <WardrobeCategory title="Accessories" items={accessoriesItems} />
           </div>
         </div>
       </div>

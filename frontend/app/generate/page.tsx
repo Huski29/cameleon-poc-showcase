@@ -11,6 +11,7 @@ export default function GeneratePage() {
   const router = useRouter();
   const [inputValue, setInputValue] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
   const { generateOutfit } = useOutfitStore();
   const { items, fetchItems } = useWardrobeStore();
 
@@ -23,8 +24,15 @@ export default function GeneratePage() {
   };
 
   const handleGenerateOutfit = async () => {
-    await generateOutfit(inputValue, { category: selectedCategory });
-    router.push("/outfit-result");
+    setIsGenerating(true);
+    try {
+      await generateOutfit(inputValue, { category: selectedCategory });
+      router.push("/outfit-result");
+    } catch (error) {
+      console.error("Failed to generate outfit:", error);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const wardrobePreview = items.slice(0, 6);
@@ -82,15 +90,28 @@ export default function GeneratePage() {
               <div className="w-full pt-8">
                 <button 
                   onClick={handleGenerateOutfit}
-                  className="flex h-12 w-full min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-xl bg-primary px-5 text-base font-bold text-text-light transition-transform hover:scale-105 active:scale-95"
+                  disabled={isGenerating || !inputValue.trim()}
+                  className="flex h-12 w-full min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-xl bg-primary px-5 text-base font-bold text-text-light transition-transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
-                  <span 
-                    className="material-symbols-outlined !text-xl" 
-                    style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20" }}
-                  >
-                    auto_awesome
-                  </span>
-                  <span>Generate Outfit</span>
+                  {isGenerating ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Generating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span 
+                        className="material-symbols-outlined !text-xl" 
+                        style={{ fontVariationSettings: "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20" }}
+                      >
+                        auto_awesome
+                      </span>
+                      <span>Generate Outfit</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -122,12 +143,23 @@ export default function GeneratePage() {
             <div className="hide-scrollbar">
               <div className="grid grid-cols-2 gap-3">
                 {wardrobePreview.map((item) => (
-                  <img
-                    key={item.id}
-                    alt={item.alt}
-                    className="aspect-square w-full rounded-lg object-cover"
-                    src={item.image}
-                  />
+                  <div key={item.id} className="relative aspect-square w-full rounded-lg overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800">
+                    <img
+                      alt={item.alt}
+                      className="w-full h-full object-cover"
+                      src={item.image}
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent) {
+                          parent.innerHTML = `<div class="flex items-center justify-center w-full h-full">
+                            <span class="material-symbols-outlined text-2xl text-gray-400">image_not_supported</span>
+                          </div>`;
+                        }
+                      }}
+                    />
+                  </div>
                 ))}
               </div>
             </div>

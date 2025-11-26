@@ -6,43 +6,112 @@ import { useUserStore } from "./stores/useUserStore";
 import { BODY_TYPES, HEIGHT_RANGES, VOLUME_RANGES } from "./constants";
 import { RangeSlider, BodyTypeSelector } from "./components/forms";
 import { Logo } from "./components/layout/Logo";
+import { compressImage } from "./lib/imageUtils";
 import type { BodyType } from "./types";
 
 export default function HomePage() {
   const router = useRouter();
-  const { profile, fetchProfile, updateAvatar, updateUser } = useUserStore();
+  const { profile, fetchProfile, updateAvatar, updateUser, isLoading } = useUserStore();
   
-  const [gender, setGender] = useState<'male' | 'female'>('female');
   const [heightRange, setHeightRange] = useState(1);
   const [volumeRange, setVolumeRange] = useState(1);
   const [selectedBodyType, setSelectedBodyType] = useState("");
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
 
   useEffect(() => {
-    if (profile?.avatar) {
-      const heightIndex = HEIGHT_RANGES.indexOf(profile.avatar.height);
-      const volumeIndex = VOLUME_RANGES.indexOf(profile.avatar.volume);
-      setHeightRange(heightIndex !== -1 ? heightIndex : 1);
-      setVolumeRange(volumeIndex !== -1 ? volumeIndex : 1);
-      setSelectedBodyType(profile.avatar.bodyType);
+    if (profile && !isInitialized) {
+      // Load avatar settings
+      if (profile.avatar) {
+        const heightIndex = HEIGHT_RANGES.indexOf(profile.avatar.height);
+        const volumeIndex = VOLUME_RANGES.indexOf(profile.avatar.volume);
+        setHeightRange(heightIndex !== -1 ? heightIndex : 1);
+        setVolumeRange(volumeIndex !== -1 ? volumeIndex : 1);
+        setSelectedBodyType(profile.avatar.bodyType);
+      }
+      
+      // Load profile picture
+      if (profile.user?.profilePicture) {
+        setSelectedImage(profile.user.profilePicture);
+      }
+      
+      setIsInitialized(true);
     }
-    if (profile?.user?.gender) {
-      setGender(profile.user.gender as 'male' | 'female');
-    }
-  }, [profile]);
+  }, [profile, isInitialized]);
 
-  const handleGenerateAvatar = () => {
-    if (profile?.user && profile.user.gender !== gender) {
-      updateUser({ gender });
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        try {
+          // Compress the image to reduce storage size
+          const compressed = await compressImage(reader.result as string, 400, 400, 0.7);
+          setSelectedImage(compressed);
+        } catch (error) {
+          console.error('Failed to compress image:', error);
+          // Fallback to original if compression fails
+          setSelectedImage(reader.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
     }
-    updateAvatar({
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        try {
+          // Compress the image to reduce storage size
+          const compressed = await compressImage(reader.result as string, 400, 400, 0.7);
+          setSelectedImage(compressed);
+        } catch (error) {
+          console.error('Failed to compress image:', error);
+          // Fallback to original if compression fails
+          setSelectedImage(reader.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleChooseFileClick = () => {
+    document.getElementById('file-input')?.click();
+  };
+
+  const handleGenerateAvatar = async () => {
+    // Update avatar dimensions
+    await updateAvatar({
       height: HEIGHT_RANGES[heightRange],
       volume: VOLUME_RANGES[volumeRange],
       bodyType: selectedBodyType as BodyType,
     });
+    
+    // Store the selected image in localStorage temporarily
+    if (selectedImage) {
+      localStorage.setItem('pendingProfilePicture', selectedImage);
+    }
+    
     router.push("/avatar-confirmation");
   };
 
@@ -62,42 +131,6 @@ export default function HomePage() {
       <main className="flex h-full flex-1 items-center justify-center py-5 px-3 sm:px-4 md:px-6 lg:px-8 overflow-x-hidden">
         <div className="main-card flex w-full max-w-4xl flex-col rounded-xl border border-solid border-[#f3f0e7]/50 dark:border-[#383325]/50 p-4 sm:p-6 md:p-8">
           
-          {/* Gender Selection */}
-          <div className="mb-6">
-            <h2 className="text-[#1b180e] dark:text-[#f8f7f6] text-base sm:text-lg font-bold leading-tight tracking-[-0.015em] text-center mb-4">
-              I&apos;m shopping for
-            </h2>
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                onClick={() => setGender('female')}
-                className={`flex flex-col items-center gap-3 px-6 py-5 rounded-xl border-2 transition ${
-                  gender === 'female'
-                    ? 'border-[#c5a572] bg-[#c5a572]/10'
-                    : 'border-[#e7e1d0] dark:border-[#383325] hover:border-[#c5a572]/50'
-                }`}
-              >
-                <div className="text-4xl">👗</div>
-                <div className="font-semibold text-sm sm:text-base text-[#1b180e] dark:text-[#f8f7f6]">
-                  Women&apos;s Fashion
-                </div>
-              </button>
-              
-              <button
-                onClick={() => setGender('male')}
-                className={`flex flex-col items-center gap-3 px-6 py-5 rounded-xl border-2 transition ${
-                  gender === 'male'
-                    ? 'border-[#c5a572] bg-[#c5a572]/10'
-                    : 'border-[#e7e1d0] dark:border-[#383325] hover:border-[#c5a572]/50'
-                }`}
-              >
-                <div className="text-4xl">👔</div>
-                <div className="font-semibold text-sm sm:text-base text-[#1b180e] dark:text-[#f8f7f6]">
-                  Men&apos;s Fashion
-                </div>
-              </button>
-            </div>
-          </div>
-          
           <h1 className="text-[#1b180e] dark:text-[#f8f7f6] tracking-light text-xl sm:text-2xl md:text-3xl font-bold leading-tight text-center pb-4 sm:pb-6">
             Create Your Style Avatar
           </h1>
@@ -106,19 +139,58 @@ export default function HomePage() {
             {/* Left Column: Upload & Sliders */}
             <div className="flex flex-col gap-4 sm:gap-6">
               {/* Selfie Upload */}
-              <div className="flex flex-col items-center gap-3 sm:gap-4 rounded-lg border-2 border-dashed border-[#e7e1d0] dark:border-[#383325] px-4 sm:px-6 py-6 sm:py-8 text-center">
-                <div className="flex flex-col items-center gap-2">
-                  <p className="text-[#1b180e] dark:text-[#f8f7f6] text-sm sm:text-base font-bold leading-tight tracking-[-0.015em]">
-                    Upload Your Selfie
-                  </p>
-                  <p className="text-[#1b180e]/70 dark:text-[#f8f7f6]/70 text-xs sm:text-sm font-normal leading-normal">
-                    Drag & drop or click to browse
-                  </p>
-                </div>
-                <button className="mt-2 flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-full h-9 sm:h-10 px-4 sm:px-5 bg-[#f3f0e7] dark:bg-[#383325] text-[#1b180e] dark:text-[#f8f7f6] text-xs sm:text-sm font-bold leading-normal tracking-[0.015em] hover:bg-[#e7e1d0] dark:hover:bg-[#4a4433] transition-colors" aria-label="Choose file to upload">
-                  <span className="material-symbols-outlined text-base sm:text-lg" aria-hidden="true">upload</span>
-                  <span className="truncate">Choose File</span>
-                </button>
+              <div 
+                className={`flex flex-col items-center gap-3 sm:gap-4 rounded-lg border-2 border-dashed px-4 sm:px-6 py-6 sm:py-8 text-center transition-colors ${
+                  isDragging 
+                    ? 'border-primary bg-primary/10' 
+                    : 'border-[#e7e1d0] dark:border-[#383325]'
+                }`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
+                <input
+                  id="file-input"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                
+                {selectedImage ? (
+                  <div className="flex flex-col items-center gap-3">
+                    <img 
+                      src={selectedImage} 
+                      alt="Selected selfie" 
+                      className="w-32 h-32 object-cover rounded-full border-2 border-primary"
+                    />
+                    <button
+                      onClick={handleChooseFileClick}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      Change photo
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex flex-col items-center gap-2">
+                      <p className="text-[#1b180e] dark:text-[#f8f7f6] text-sm sm:text-base font-bold leading-tight tracking-[-0.015em]">
+                        Upload Your Selfie
+                      </p>
+                      <p className="text-[#1b180e]/70 dark:text-[#f8f7f6]/70 text-xs sm:text-sm font-normal leading-normal">
+                        Drag & drop or click to browse
+                      </p>
+                    </div>
+                    <button 
+                      onClick={handleChooseFileClick}
+                      className="mt-2 flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-full h-9 sm:h-10 px-4 sm:px-5 bg-[#f3f0e7] dark:bg-[#383325] text-[#1b180e] dark:text-[#f8f7f6] text-xs sm:text-sm font-bold leading-normal tracking-[0.015em] hover:bg-[#e7e1d0] dark:hover:bg-[#4a4433] transition-colors" 
+                      aria-label="Choose file to upload"
+                    >
+                      <span className="material-symbols-outlined text-base sm:text-lg" aria-hidden="true">upload</span>
+                      <span className="truncate">Choose File</span>
+                    </button>
+                  </>
+                )}
               </div>
 
               {/* Sliders */}
@@ -161,11 +233,13 @@ export default function HomePage() {
               <div className="mt-auto pt-3 sm:pt-4">
                 <button
                   onClick={handleGenerateAvatar}
-                  disabled={!selectedBodyType}
-                  aria-label="Generate your style avatar"
+                  disabled={!selectedBodyType || isLoading}
+                  aria-label={isInitialized ? "Update your style avatar" : "Generate your style avatar"}
                   className="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 sm:h-14 px-5 sm:px-6 bg-primary text-[#1b180e] text-sm sm:text-base font-bold leading-normal tracking-[0.015em] shadow-lg shadow-primary/20 transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
-                  <span className="truncate">Generate Avatar</span>
+                  <span className="truncate">
+                    {isLoading ? "Loading..." : isInitialized ? "Update Avatar" : "Generate Avatar"}
+                  </span>
                 </button>
               </div>
             </div>

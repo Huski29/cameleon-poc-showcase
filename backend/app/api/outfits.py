@@ -23,7 +23,8 @@ async def generate_outfit(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    intent = gpt_service.parse_intent(request.prompt)
+    # Pass user's style preference to intent parser for personalized interpretation
+    intent = gpt_service.parse_intent(request.prompt, style_preference=user.style_preference)
     
     weather_data = weather_service.get_current_weather("New York")
     temp_category = weather_service.get_temperature_category(weather_data["temperature"])
@@ -87,11 +88,16 @@ async def generate_outfit(
                 })
     
     outfit_id = str(uuid.uuid4())
+    
+    # Ensure title is never None - use a fallback
+    outfit_title = intent.get("vibe") or intent.get("style") or request.prompt[:50] or "My Outfit"
+    outfit_vibe = intent.get("style") or intent.get("vibe") or "Stylish"
+    
     db_outfit = models.Outfit(
         id=outfit_id,
         user_id=DEFAULT_USER_ID,
-        title=intent.get("vibe", request.prompt[:30]),
-        vibe=intent.get("style", "Stylish"),
+        title=outfit_title,
+        vibe=outfit_vibe,
         generated_at=datetime.utcnow(),
         is_saved=False
     )
@@ -111,13 +117,24 @@ async def generate_outfit(
     db.commit()
     db.refresh(db_outfit)
     
+    # Refresh outfit to get items with their IDs
+    outfit_with_items = db.query(models.Outfit).filter(
+        models.Outfit.id == outfit_id
+    ).first()
+    
     response = schemas.OutfitResponse(
-        id=db_outfit.id,
-        title=db_outfit.title,
-        vibe=db_outfit.vibe,
-        generated_at=db_outfit.generated_at,
-        is_saved=db_outfit.is_saved,
-        items=[schemas.OutfitItemResponse(**item_data) for item_data in outfit_items],
+        id=outfit_with_items.id,
+        title=outfit_with_items.title,
+        vibe=outfit_with_items.vibe,
+        generated_at=outfit_with_items.generated_at,
+        is_saved=outfit_with_items.is_saved,
+        items=[schemas.OutfitItemResponse(
+            id=item.id,
+            type=item.type,
+            image=item.image,
+            name=item.name,
+            brand=item.brand
+        ) for item in outfit_with_items.items],
         reasoning=gpt_result.get("reasoning"),
         style_tips=gpt_result.get("style_tips"),
         color_harmony=gpt_result.get("color_harmony")

@@ -4,8 +4,14 @@ from app import models
 from app.services.fashionclip_service import fashionclip_service
 from typing import List, Dict, Optional
 import json
+import os
 
 class RecommendationService:
+    
+    def _is_postgresql(self) -> bool:
+        """Check if we're using PostgreSQL"""
+        db_url = os.getenv("DATABASE_URL", "sqlite:///./cameleon.db")
+        return db_url.startswith("postgresql")
     
     def search_similar_items(
         self, 
@@ -16,6 +22,10 @@ class RecommendationService:
         category: Optional[str] = None,
         top_k: int = 50
     ) -> List[models.WardrobeItem]:
+        """
+        Search for similar wardrobe items using text embeddings.
+        Uses pgvector for PostgreSQL, falls back to basic filtering for SQLite.
+        """
         query_embedding = fashionclip_service.generate_text_embedding(query_text)
         
         if not query_embedding:
@@ -23,49 +33,16 @@ class RecommendationService:
                 models.WardrobeItem.user_id == user_id
             ).limit(top_k).all()
         
-        try:
-            query_sql = """
-                SELECT *, 
-                       1 - (text_embedding <=> :query_embedding::vector) as similarity
-                FROM wardrobe_items
-                WHERE user_id = :user_id
-                      AND text_embedding IS NOT NULL
-                      AND (gender = :gender OR gender = 'unisex')
-            """
+        # Use pgvector for PostgreSQL
+        if self._is_postgresql():
+            print(f"Searching items with pgvector cosine similarity...")
+            print(f"Query embedding type: {type(query_embedding)}, length: {len(query_embedding)}")
             
-            if category:
-                query_sql += " AND category = :category"
-            
-            query_sql += """
-                ORDER BY text_embedding <=> :query_embedding::vector
-                LIMIT :top_k
-            """
-            
-            params = {
-                "query_embedding": str(query_embedding),
-                "user_id": user_id,
-                "gender": gender,
-                "top_k": top_k
-            }
-            
-            if category:
-                params["category"] = category
-            
-            results = db.execute(text(query_sql), params).fetchall()
-            
-            items = []
-            for row in results:
-                item = db.query(models.WardrobeItem).filter(
-                    models.WardrobeItem.id == row.id
-                ).first()
-                if item:
-                    items.append(item)
-            
-            return items
-        except Exception as e:
-            print(f"Vector search failed: {e}. Falling back to basic query.")
+            # Build the base query with vector similarity search
+            # Pass the embedding list directly to cosine_distance
             query_obj = db.query(models.WardrobeItem).filter(
-                models.WardrobeItem.user_id == user_id
+                models.WardrobeItem.user_id == user_id,
+                models.WardrobeItem.text_embedding.isnot(None)
             )
             
             if category:
@@ -75,7 +52,33 @@ class RecommendationService:
                 (models.WardrobeItem.gender == gender) | (models.WardrobeItem.gender == 'unisex')
             )
             
-            return query_obj.limit(top_k).all()
+            # Order by cosine similarity (lower distance = more similar)
+            # pgvector's cosine_distance accepts the embedding list directly
+            query_obj = query_obj.order_by(
+                models.WardrobeItem.text_embedding.cosine_distance(query_embedding)
+            )
+            
+            items = query_obj.limit(top_k).all()
+            return items
+        
+        # Fallback for SQLite - basic filtering
+        else:
+            print(f"Searching items with basic query (SQLite mode)...")
+            
+            query_obj = db.query(models.WardrobeItem).filter(
+                models.WardrobeItem.user_id == user_id,
+                models.WardrobeItem.text_embedding != None
+            )
+            
+            if category:
+                query_obj = query_obj.filter(models.WardrobeItem.category == category)
+            
+            query_obj = query_obj.filter(
+                (models.WardrobeItem.gender == gender) | (models.WardrobeItem.gender == 'unisex')
+            )
+            
+            items = query_obj.limit(top_k).all()
+            return items
     
     def filter_by_context(
         self,

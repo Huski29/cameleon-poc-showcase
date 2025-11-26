@@ -54,3 +54,13 @@ yarn-error.log*
 # Misc
 .vercel
 *.pem
+.fuse_hidden*
+
+# Data files
+backend/images/
+backend/myntradataset/
+backend/*.zip
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
