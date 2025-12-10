@@ -9,6 +9,8 @@ export default function OutfitResultPage() {
   const router = useRouter();
   const { currentOutfit, saveOutfit, generateOutfit } = useOutfitStore();
   const [isSaving, setIsSaving] = useState(false);
+  const [isGeneratingTryOn, setIsGeneratingTryOn] = useState(false);
+  const [tryOnImage, setTryOnImage] = useState<string | null>(null);
 
   // Redirect to generate page if no outfit is available
   useEffect(() => {
@@ -17,8 +19,38 @@ export default function OutfitResultPage() {
     }
   }, [currentOutfit, router]);
 
-  const handleTryOn = () => {
-    router.push("/try-on");
+  const handleTryOn = async () => {
+    if (!currentOutfit) return;
+    
+    setIsGeneratingTryOn(true);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiUrl}/api/v1/outfits/${currentOutfit.id}/tryon`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Failed to generate try-on');
+      }
+
+      const data = await response.json();
+      setTryOnImage(data.tryon_image);
+      
+      // Navigate to try-on page or show modal with the image
+      // For now, we'll store it and navigate
+      localStorage.setItem('tryOnImage', data.tryon_image);
+      router.push("/try-on");
+      
+    } catch (error) {
+      console.error('Error generating try-on:', error);
+      alert(`Failed to generate try-on: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsGeneratingTryOn(false);
+    }
   };
 
   const handleSaveOutfit = async () => {
@@ -108,9 +140,12 @@ export default function OutfitResultPage() {
             <div className="flex flex-col sm:flex-row items-center gap-3 w-full mt-4">
               <button 
                 onClick={handleTryOn}
-                className="flex w-full sm:w-auto sm:flex-1 min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 px-6 bg-primary text-text-light text-base font-bold leading-normal tracking-[0.015em] hover:opacity-90 transition-opacity"
+                disabled={isGeneratingTryOn}
+                className="flex w-full sm:w-auto sm:flex-1 min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 px-6 bg-primary text-text-light text-base font-bold leading-normal tracking-[0.015em] hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <span className="truncate">Try On</span>
+                <span className="truncate">
+                  {isGeneratingTryOn ? "Generating Try-On..." : "Try On"}
+                </span>
               </button>
 
               <button 

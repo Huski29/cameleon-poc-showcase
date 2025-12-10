@@ -8,6 +8,7 @@ export interface User {
   name: string;
   email: string;
   profilePicture: string;
+  uploadedImage?: string;  // Original user photo (not the generated avatar)
   gender: Gender;
 }
 

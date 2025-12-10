@@ -26,7 +26,10 @@ class RecommendationService:
         Search for similar wardrobe items using text embeddings.
         Uses pgvector for PostgreSQL, falls back to basic filtering for SQLite.
         """
-        query_embedding = fashionclip_service.generate_text_embedding(query_text)
+        # Enhance query with prompt template for better CLIP performance
+        # Fashion-CLIP models work better with descriptive prompts
+        enhanced_query = f"a photo of {query_text}" if not query_text.startswith("a photo of") else query_text
+        query_embedding = fashionclip_service.generate_text_embedding(enhanced_query)
         
         if not query_embedding:
             return db.query(models.WardrobeItem).filter(

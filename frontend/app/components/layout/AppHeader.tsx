@@ -13,12 +13,13 @@ export default function AppHeader() {
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   
-  const { profile } = useUserStore();
+  const { profile, fetchProfile } = useUserStore();
   const { notifications, fetchNotifications, markAsRead } = useUIStore();
 
   useEffect(() => {
+    fetchProfile();
     fetchNotifications();
-  }, [fetchNotifications]);
+  }, [fetchProfile, fetchNotifications]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
@@ -52,14 +53,8 @@ export default function AppHeader() {
     <header className="sticky top-0 z-50 w-full px-3 sm:px-4 md:px-6 lg:px-8 bg-white/40 dark:bg-black/20 backdrop-blur-lg border-b border-border-light dark:border-border-dark">
       <div className="mx-auto max-w-screen-xl">
         <div className="flex items-center justify-between h-16 sm:h-20">
-          <div className="flex items-center gap-2 sm:gap-4 text-text-light dark:text-text-dark">
+          <div className="flex items-center text-text-light dark:text-text-dark cursor-pointer" onClick={() => router.push("/generate")}>
             <Logo />
-            <h1 
-              className="text-lg sm:text-xl font-black tracking-tighter cursor-pointer" 
-              onClick={() => router.push("/generate")}
-            >
-              Cameleon
-            </h1>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4">
@@ -166,7 +161,7 @@ export default function AppHeader() {
                   }}
                   className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-9 sm:size-10 cursor-pointer ring-2 ring-transparent hover:ring-primary/30 transition-all"
                   style={{
-                    backgroundImage: `url('${profile?.user.profilePicture}')`
+                    backgroundImage: `url('${profile?.user.uploadedImage || profile?.user.profilePicture || ''}')`
                   }}
                   data-alt="User profile picture"
                 />

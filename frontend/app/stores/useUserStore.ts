@@ -37,6 +37,7 @@ export const useUserStore = create<UserState>()((set) => ({
           name: data.name,
           email: data.email,
           profilePicture: data.profile_picture || '',
+          uploadedImage: data.uploaded_image || undefined,  // Original user photo
           gender: data.gender || 'female',
         },
         avatar: {
@@ -151,6 +152,7 @@ export const useUserStore = create<UserState>()((set) => ({
                 name: data.name,
                 email: data.email,
                 profilePicture: data.profile_picture || '',
+                uploadedImage: data.uploaded_image || undefined,
                 gender: data.gender || 'female',
               },
             } : null,

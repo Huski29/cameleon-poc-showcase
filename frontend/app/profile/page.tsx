@@ -100,7 +100,7 @@ export default function ProfilePage() {
               <div 
                 className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-24 ring-2 ring-border-light dark:ring-border-dark"
                 style={{
-                  backgroundImage: `url('${profile?.user.profilePicture}')`
+                  backgroundImage: `url('${profile?.user.uploadedImage || profile?.user.profilePicture || ''}')`
                 }}
               />
               <button className="px-5 py-2.5 rounded-lg bg-primary text-text-light font-semibold text-sm hover:opacity-90 transition-opacity">

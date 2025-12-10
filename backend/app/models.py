@@ -16,7 +16,8 @@ class User(Base):
     id = Column(String, primary_key=True, index=True)
     name = Column(String, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
-    profile_picture = Column(String, nullable=True)
+    profile_picture = Column(String, nullable=True)  # Generated avatar
+    uploaded_image = Column(String, nullable=True)  # Original user photo
     gender = Column(String, nullable=False, default="female")
     
     height = Column(String, nullable=False)

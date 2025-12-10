@@ -3,8 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
 from app import models
 from app.api import users, wardrobe, outfits, notifications
+from app.services.cache_service import init_redis
 
 Base.metadata.create_all(bind=engine)
+
+# Initialize Redis cache on startup
+init_redis()
 
 app = FastAPI(
     title="Cameleon API",
@@ -20,7 +24,10 @@ app.add_middleware(
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:3001",
-        "http://127.0.0.1:3001"
+        "http://127.0.0.1:3001",
+        "https://showcase.cameleon.fit",
+        "http://showcase.cameleon.fit",
+        "http://182.184.192.253:3000"
     ],
     allow_credentials=True,
     allow_methods=["*"],

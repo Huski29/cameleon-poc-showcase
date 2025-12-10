@@ -7,6 +7,7 @@ from app import models, schemas
 from app.services.recommendation_service import recommendation_service
 from app.services.gpt_service import gpt_service
 from app.services.weather_service import weather_service
+from app.services.gemini_tryon_service import gemini_tryon_service
 import uuid
 import random
 
@@ -29,16 +30,21 @@ async def generate_outfit(
     weather_data = weather_service.get_current_weather("New York")
     temp_category = weather_service.get_temperature_category(weather_data["temperature"])
     
-    items = recommendation_service.search_similar_items(
-        db=db,
-        query_text=request.prompt,
-        user_id=DEFAULT_USER_ID,
-        gender=user.gender,
-        top_k=50
-    )
+    # Search for items in each category separately to ensure we get items from all categories
+    all_items = []
+    for category in ["tops", "bottoms", "shoes", "accessories"]:
+        category_items = recommendation_service.search_similar_items(
+            db=db,
+            query_text=request.prompt,
+            user_id=DEFAULT_USER_ID,
+            gender=user.gender,
+            category=category,
+            top_k=15  # Get 15 items per category
+        )
+        all_items.extend(category_items)
     
     filtered_items = recommendation_service.filter_by_context(
-        items=items,
+        items=all_items,
         weather_temp=weather_data["temperature"],
         occasion=intent.get("occasion"),
         season=None
@@ -78,6 +84,7 @@ async def generate_outfit(
                 "brand": selected_item.brand or "Unknown"
             })
         else:
+            # Fallback: if GPT's selection doesn't match exactly, pick a random item from that category
             if category in grouped_items and grouped_items[category]:
                 fallback = random.choice(grouped_items[category])
                 outfit_items.append({
@@ -188,4 +195,73 @@ async def save_outfit(
     db.refresh(outfit)
     
     return outfit
+
+@router.post("/{outfit_id}/tryon", response_model=schemas.TryOnResponse)
+async def generate_tryon(
+    outfit_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Generate a virtual try-on image showing the user's avatar wearing the outfit.
+    """
+    # Get the outfit with all items
+    outfit = db.query(models.Outfit).filter(
+        models.Outfit.id == outfit_id,
+        models.Outfit.user_id == DEFAULT_USER_ID
+    ).first()
+    
+    if not outfit:
+        raise HTTPException(status_code=404, detail="Outfit not found")
+    
+    # Get user profile with avatar
+    user = db.query(models.User).filter(models.User.id == DEFAULT_USER_ID).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if not user.profile_picture:
+        raise HTTPException(status_code=400, detail="User avatar not found. Please create your avatar first.")
+    
+    # Prepare outfit items for try-on
+    outfit_items = []
+    for item in outfit.items:
+        # Get the full wardrobe item to access the image
+        wardrobe_item = db.query(models.WardrobeItem).filter(
+            models.WardrobeItem.title == item.name
+        ).first()
+        
+        outfit_items.append({
+            "type": item.type,
+            "name": item.name,
+            "brand": item.brand,
+            "image": item.image if item.image else (wardrobe_item.image if wardrobe_item else "")
+        })
+    
+    # Prepare user body info
+    user_body_info = {
+        "gender": user.gender,
+        "height": user.height,
+        "volume": user.volume,
+        "body_type": user.body_type
+    }
+    
+    # Get user's original uploaded image if available (stored when creating avatar)
+    # Check if user has an uploaded_image attribute, otherwise use None
+    user_uploaded_image = getattr(user, 'uploaded_image', None)
+    
+    # Generate try-on image with both avatar and original photo for better consistency
+    tryon_image = gemini_tryon_service.generate_tryon(
+        avatar_image=user.profile_picture,
+        outfit_items=outfit_items,
+        user_body_info=user_body_info,
+        user_uploaded_image=user_uploaded_image
+    )
+    
+    if not tryon_image:
+        raise HTTPException(status_code=500, detail="Failed to generate try-on image. Please try again.")
+    
+    return schemas.TryOnResponse(
+        outfit_id=outfit_id,
+        tryon_image=tryon_image,
+        message="Virtual try-on generated successfully!"
+    )
 

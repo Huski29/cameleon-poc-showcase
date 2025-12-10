@@ -19,6 +19,7 @@ export default function HomePage() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -35,8 +36,10 @@ export default function HomePage() {
         setSelectedBodyType(profile.avatar.bodyType);
       }
       
-      // Load profile picture
-      if (profile.user?.profilePicture) {
+      // Load profile picture - prefer original uploaded image over generated avatar
+      if (profile.user?.uploadedImage) {
+        setSelectedImage(profile.user.uploadedImage);
+      } else if (profile.user?.profilePicture) {
         setSelectedImage(profile.user.profilePicture);
       }
       
@@ -100,19 +103,53 @@ export default function HomePage() {
   };
 
   const handleGenerateAvatar = async () => {
-    // Update avatar dimensions
-    await updateAvatar({
-      height: HEIGHT_RANGES[heightRange],
-      volume: VOLUME_RANGES[volumeRange],
-      bodyType: selectedBodyType as BodyType,
-    });
-    
-    // Store the selected image in localStorage temporarily
-    if (selectedImage) {
-      localStorage.setItem('pendingProfilePicture', selectedImage);
+    // Require uploaded image
+    if (!selectedImage) {
+      alert('Please upload your photo first to generate your avatar.');
+      return;
     }
-    
-    router.push("/avatar-confirmation");
+
+    try {
+      setIsGeneratingAvatar(true);
+      
+      // First, update avatar dimensions
+      await updateAvatar({
+        height: HEIGHT_RANGES[heightRange],
+        volume: VOLUME_RANGES[volumeRange],
+        bodyType: selectedBodyType as BodyType,
+      });
+      
+      // Call the API to generate avatar with Gemini using the uploaded image
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiUrl}/api/v1/users/avatar/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_image: selectedImage
+        })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Failed to generate avatar');
+      }
+      
+      const data = await response.json();
+      
+      // Store the generated avatar in localStorage for the confirmation page
+      localStorage.setItem('pendingProfilePicture', data.avatar_image);
+      
+      // Navigate to confirmation page
+      router.push("/avatar-confirmation");
+      
+    } catch (error) {
+      console.error('Error generating avatar:', error);
+      alert(`Failed to generate avatar: ${error instanceof Error ? error.message : 'Unknown error'}. Please make sure GEMINI_API_KEY is set.`);
+    } finally {
+      setIsGeneratingAvatar(false);
+    }
   };
 
   return (
@@ -120,9 +157,8 @@ export default function HomePage() {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-10 w-full glassmorphic-header">
         <div className="mx-auto flex max-w-7xl items-center justify-between whitespace-nowrap px-4 sm:px-6 py-3 sm:py-4">
-          <div className="flex items-center gap-2 sm:gap-3 text-[#1b180e] dark:text-[#f8f7f6]">
+          <div className="flex items-center text-[#1b180e] dark:text-[#f8f7f6]">
             <Logo />
-            <h2 className="text-lg sm:text-xl font-bold leading-tight tracking-[-0.015em]">Cameleon</h2>
           </div>
         </div>
       </header>
@@ -175,7 +211,7 @@ export default function HomePage() {
                   <>
                     <div className="flex flex-col items-center gap-2">
                       <p className="text-[#1b180e] dark:text-[#f8f7f6] text-sm sm:text-base font-bold leading-tight tracking-[-0.015em]">
-                        Upload Your Selfie
+                        Upload Your Photo
                       </p>
                       <p className="text-[#1b180e]/70 dark:text-[#f8f7f6]/70 text-xs sm:text-sm font-normal leading-normal">
                         Drag & drop or click to browse
@@ -233,14 +269,24 @@ export default function HomePage() {
               <div className="mt-auto pt-3 sm:pt-4">
                 <button
                   onClick={handleGenerateAvatar}
-                  disabled={!selectedBodyType || isLoading}
-                  aria-label={isInitialized ? "Update your style avatar" : "Generate your style avatar"}
-                  className="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 sm:h-14 px-5 sm:px-6 bg-primary text-[#1b180e] text-sm sm:text-base font-bold leading-normal tracking-[0.015em] shadow-lg shadow-primary/20 transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  disabled={!selectedBodyType || !selectedImage || isLoading || isGeneratingAvatar}
+                  aria-label="Generate your AI-powered style avatar"
+                  className="flex w-full cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-xl h-12 sm:h-14 px-5 sm:px-6 bg-primary text-[#1b180e] text-sm sm:text-base font-bold leading-normal tracking-[0.015em] shadow-lg shadow-primary/20 transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
+                  {isGeneratingAvatar && (
+                    <span className="material-symbols-outlined text-lg sm:text-xl animate-spin" aria-hidden="true">
+                      progress_activity
+                    </span>
+                  )}
                   <span className="truncate">
-                    {isLoading ? "Loading..." : isInitialized ? "Update Avatar" : "Generate Avatar"}
+                    {isGeneratingAvatar ? "Creating Avatar..." : "Generate Avatar"}
                   </span>
                 </button>
+                {(!selectedImage || !selectedBodyType) && (
+                  <p className="text-[#1b180e]/60 dark:text-[#f8f7f6]/60 text-xs text-center mt-2">
+                    {!selectedImage ? "Upload a photo to continue" : "Select body type to continue"}
+                  </p>
+                )}
               </div>
             </div>
           </div>

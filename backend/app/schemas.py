@@ -32,6 +32,17 @@ class AvatarUpdate(BaseModel):
     volume: Optional[str] = None
     body_type: Optional[str] = None
 
+class AvatarGenerateRequest(BaseModel):
+    user_image: str  # Base64 encoded data URI
+
+class AvatarGenerateResponse(BaseModel):
+    avatar_image: str
+
+class TryOnResponse(BaseModel):
+    outfit_id: str
+    tryon_image: str  # Base64 encoded try-on image
+    message: str
+
 class PreferencesUpdate(BaseModel):
     style_preference: Optional[str] = None
     color_palette: Optional[str] = None
@@ -42,6 +53,7 @@ class UserResponse(BaseModel):
     name: str
     email: str
     profile_picture: Optional[str]
+    uploaded_image: Optional[str] = None  # Original user photo (not the generated avatar)
     gender: str
     height: str
     volume: str

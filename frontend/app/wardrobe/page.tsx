@@ -7,16 +7,10 @@ import { Logo } from "../components/layout/Logo";
 
 export default function WardrobePage() {
   const router = useRouter();
-  const { getItemsByCategory } = useWardrobeStore();
 
   const handleClose = () => {
     router.back();
   };
-
-  const topsItems = getItemsByCategory('tops');
-  const bottomsItems = getItemsByCategory('bottoms');
-  const shoesItems = getItemsByCategory('shoes');
-  const accessoriesItems = getItemsByCategory('accessories');
 
   return (
     <div className="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#F5F5DC] to-[#FFFDD0] p-4">
@@ -31,11 +25,8 @@ export default function WardrobePage() {
 
       {/* Glassmorphic Header */}
       <header className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between whitespace-nowrap border-b border-solid border-white/20 bg-white/20 px-10 py-3 backdrop-blur-lg">
-        <div className="flex items-center gap-4 text-[#36454F] dark:text-[#FAF9F6]">
+        <div className="flex items-center text-[#36454F] dark:text-[#FAF9F6]">
           <Logo />
-          <h2 className="text-[#36454F] dark:text-[#FAF9F6] text-lg font-bold leading-tight tracking-[-0.015em]">
-            Cameleon
-          </h2>
         </div>
       </header>
 
@@ -62,10 +53,10 @@ export default function WardrobePage() {
         {/* Modal Content */}
         <div className="flex-1 overflow-y-auto p-2 sm:p-6">
           <div className="layout-content-container flex flex-1 flex-col">
-            <WardrobeCategory title="Tops" items={topsItems} />
-            <WardrobeCategory title="Bottoms" items={bottomsItems} />
-            <WardrobeCategory title="Shoes" items={shoesItems} />
-            <WardrobeCategory title="Accessories" items={accessoriesItems} />
+            <WardrobeCategory title="Tops" category="tops" />
+            <WardrobeCategory title="Bottoms" category="bottoms" />
+            <WardrobeCategory title="Shoes" category="shoes" />
+            <WardrobeCategory title="Accessories" category="accessories" />
           </div>
         </div>
       </div>

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useOutfitStore } from "../stores/useOutfitStore";
 import { useWardrobeStore } from "../stores/useWardrobeStore";
 import { STYLE_CATEGORIES } from "../constants";
-import { Logo } from "../components/layout/Logo";
+import AppHeader from "../components/layout/AppHeader";
 
 export default function GeneratePage() {
   const router = useRouter();
@@ -13,11 +13,16 @@ export default function GeneratePage() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const { generateOutfit } = useOutfitStore();
-  const { items, fetchItems } = useWardrobeStore();
+  const { items, fetchItemsByCategory } = useWardrobeStore();
 
+  // Load a small sample of items from each category for preview
   useEffect(() => {
-    fetchItems();
-  }, [fetchItems]);
+    // Load just 2 items from each category for the preview (total 8 items, showing 6)
+    const categories: Array<'tops' | 'bottoms' | 'shoes' | 'accessories'> = ['tops', 'bottoms', 'shoes', 'accessories'];
+    categories.forEach(category => {
+      fetchItemsByCategory(category, 2, 0).catch(console.error);
+    });
+  }, [fetchItemsByCategory]);
 
   const handleOpenWardrobe = () => {
     router.push("/wardrobe");
@@ -40,14 +45,7 @@ export default function GeneratePage() {
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full px-4 sm:px-8 md:px-12 py-3">
-        <div className="glassmorphic mx-auto flex max-w-7xl items-center justify-between whitespace-nowrap rounded-xl px-6 py-3 shadow-sm">
-          <div className="flex items-center gap-4 text-text-light dark:text-text-dark">
-            <Logo />
-            <h2 className="text-xl font-bold tracking-tight">Cameleon</h2>
-          </div>
-        </div>
-      </header>
+      <AppHeader />
 
       {/* Main Content */}
       <main className="flex flex-1 items-center justify-center p-3 sm:p-4 md:p-6 lg:p-8">

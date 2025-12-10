@@ -7,6 +7,7 @@ export const mockUserProfile: UserProfile = {
     name: "Sarah Johnson",
     email: "sarah.j@email.com",
     profilePicture: DEFAULT_PROFILE_PICTURE,
+    gender: "female",
   },
   avatar: {
     height: "Regular",

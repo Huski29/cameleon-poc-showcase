@@ -1,26 +1,70 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { WardrobeItem as WardrobeItemCard } from './WardrobeItem';
-import type { WardrobeItem } from '../../types';
+import { useWardrobeStore } from '../../stores/useWardrobeStore';
+import type { WardrobeItem, ClothingCategory } from '../../types';
 
 interface WardrobeCategoryProps {
   title: string;
-  items: WardrobeItem[];
+  category: ClothingCategory;
   onItemClick?: (item: WardrobeItem) => void;
 }
 
 const INITIAL_ITEMS = 7;
 const LOAD_MORE_INCREMENT = 8;
 
-export function WardrobeCategory({ title, items, onItemClick }: WardrobeCategoryProps) {
-  const [visibleCount, setVisibleCount] = useState(INITIAL_ITEMS);
+export function WardrobeCategory({ title, category, onItemClick }: WardrobeCategoryProps) {
+  const { items, fetchItemsByCategory, isLoading } = useWardrobeStore();
+  const [loadedCount, setLoadedCount] = useState(0);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasLoadedInitial, setHasLoadedInitial] = useState(false);
+  const [hasMoreItems, setHasMoreItems] = useState(true);
   
-  const visibleItems = items.slice(0, visibleCount);
-  const hasMore = visibleCount < items.length;
+  // Get items for this category from store
+  const categoryItems = items.filter(i => i.category === category);
+  const visibleItems = categoryItems.slice(0, loadedCount || INITIAL_ITEMS);
   
-  const handleLoadMore = () => {
-    setVisibleCount(prev => Math.min(prev + LOAD_MORE_INCREMENT, items.length));
+  // Initial load
+  useEffect(() => {
+    if (!hasLoadedInitial && !isLoading) {
+      setHasLoadedInitial(true);
+      fetchItemsByCategory(category, INITIAL_ITEMS, 0).then((newItems) => {
+        if (newItems.length > 0) {
+          setLoadedCount(newItems.length);
+          // If we got fewer items than requested, there are no more
+          if (newItems.length < INITIAL_ITEMS) {
+            setHasMoreItems(false);
+          }
+        } else {
+          setHasMoreItems(false);
+        }
+      });
+    }
+  }, [category, hasLoadedInitial, isLoading, fetchItemsByCategory]);
+  
+  const handleLoadMore = async () => {
+    setIsLoadingMore(true);
+    const nextOffset = loadedCount;
+    
+    try {
+      const newItems = await fetchItemsByCategory(category, LOAD_MORE_INCREMENT, nextOffset);
+      if (newItems.length > 0) {
+        setLoadedCount(prev => prev + newItems.length);
+        // If we got fewer items than requested, we've reached the end
+        if (newItems.length < LOAD_MORE_INCREMENT) {
+          setHasMoreItems(false);
+        }
+      } else {
+        // No more items available
+        setHasMoreItems(false);
+      }
+    } catch (error) {
+      console.error('Failed to load more items:', error);
+      setHasMoreItems(false);
+    } finally {
+      setIsLoadingMore(false);
+    }
   };
   
   return (
@@ -37,7 +81,7 @@ export function WardrobeCategory({ title, items, onItemClick }: WardrobeCategory
           />
         ))}
         
-        {hasMore && (
+        {hasMoreItems && (
           <button
             onClick={handleLoadMore}
             className="flex flex-col gap-3 rounded-xl bg-white/50 p-3 pb-4 shadow-lg shadow-black/5 transition-all hover:shadow-xl hover:shadow-black/10 dark:bg-white/5 cursor-pointer"
@@ -45,10 +89,10 @@ export function WardrobeCategory({ title, items, onItemClick }: WardrobeCategory
             {/* Image Container with same aspect ratio as items */}
             <div className="relative w-full aspect-[3/4] rounded-lg overflow-hidden">
               {/* Background Image with Blur */}
-              {items[visibleCount] && (
+              {categoryItems[loadedCount] && (
                 <>
                   <img
-                    src={items[visibleCount].image}
+                    src={categoryItems[loadedCount].image}
                     alt=""
                     className="absolute inset-0 w-full h-full object-cover blur-md scale-110"
                   />
@@ -64,9 +108,6 @@ export function WardrobeCategory({ title, items, onItemClick }: WardrobeCategory
                 <div className="text-center">
                   <p className="text-[#36454F] dark:text-[#FAF9F6] text-base font-semibold leading-normal drop-shadow-md">
                     Load More
-                  </p>
-                  <p className="text-[#96897B] dark:text-[#96897B]/80 text-sm font-normal leading-normal drop-shadow-md">
-                    {items.length - visibleCount} more
                   </p>
                 </div>
               </div>

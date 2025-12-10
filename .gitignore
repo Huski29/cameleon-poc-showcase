@@ -56,11 +56,23 @@ yarn-error.log*
 *.pem
 .fuse_hidden*
 
-# Data files
+# PM2
+.pm2
+
+# Data files and datasets
 backend/images/
 backend/myntradataset/
+backend/myntradataset_backup/
 backend/*.zip
+backend/*.tar
+backend/*.tar.gz
+backend/*.pt
+backend/logs/
 *.json
 !package.json
 !package-lock.json
 !tsconfig.json
+
+# Kaggle datasets
+**/.cache/kagglehub/
+**/kagglehub/
